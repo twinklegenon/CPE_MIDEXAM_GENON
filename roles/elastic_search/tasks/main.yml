@@ -1,0 +1,221 @@
+---
+#
+# Install/run elasticsearch 
+  ###UBUNTU
+  ###UBUNTU
+  ###UBUNTU
+- name: Install ELK Dependencies (Ubuntu)
+  apt:
+    name:
+      - openjdk-11-jdk
+      - apt-transport-https
+      - curl
+      - gpgv
+      - gpgsm
+      - gnupg-l10n
+      - gnupg
+      - dirmngr
+    state: latest
+  when: ansible_distribution == "Ubuntu"
+
+- name: Get PGP Key (Ubuntu)
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install Elasticsearch repository into sources list (Ubuntu)
+  apt_repository:
+    repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install Elasticsearch (Ubuntu)
+  apt:
+    name: elasticsearch
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Configure Elasticsearch change cluster name (Ubuntu)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "cluster.name: demo-elk"
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Configure Elasticsearch give cluster descriptive name (Ubuntu)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "node.name: elk-1"
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Configure Elasticsearch Add network.host (Ubuntu)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "network.host: 0.0.0.0"
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Configure Elasticsearch Add http.port (Ubuntu)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "http.port: 9200"
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Configure Elasticsearch Add discovery.type (Ubuntu)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "discovery.type: single-node"
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Creating an empty file for startup-timeout.conf 1 of 2 (Ubuntu)
+  file:
+    path: "/etc/systemd/system/elasticsearch.service.d"
+    state: directory
+  when: ansible_distribution == "Ubuntu"
+
+- name: Creating an empty file for startup-timeout.conf 2 of 2 (Ubuntu)
+  file:
+    path: "/etc/systemd/system/elasticsearch.service.d/startup-timeout.conf"
+    state: touch
+  when: ansible_distribution == "Ubuntu"
+
+- name: Prevent systemd service start operation from timing out (Ubuntu)
+  copy:
+    dest: "/etc/systemd/system/elasticsearch.service.d/startup-timeout.conf"
+    content: |
+      [Service]
+      TimeoutStartSec=3min
+  when: ansible_distribution == "Ubuntu"
+
+- name: Run daemon-reload for elasticsearch (Ubuntu)
+  systemd: daemon_reload=yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Enable service Elasticsearch and ensure it is not masked (Ubuntu)
+  systemd:
+    name: elasticsearch
+    enabled: yes
+    masked: no
+  when: ansible_distribution == "Ubuntu"
+
+- name: ensure elasticsearch is running (Ubuntu)
+  systemd: state=started name=elasticsearch
+  when: ansible_distribution == "Ubuntu"
+
+- name: Start Elasticsearch for Ubuntu
+  shell: systemctl start elasticsearch
+  when: ansible_distribution == "Ubuntu"
+  ###CENTOS
+  ###CENTOS
+  ###CENTOS
+- name: Install ELK Dependencies CentOs
+  yum:
+    name:
+      - java-11-openjdk
+      - curl
+      - gnupg
+    state: latest
+  when: ansible_distribution == "CentOS"
+
+- name: install elasticsearch rpm key CentOs
+  rpm_key:
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  become: true
+  when: ansible_distribution == "CentOS"
+
+- name: install elasticsearch 7.x rpm repository
+  yum_repository:
+    name: Elastic_7.X_repo
+    baseurl: https://artifacts.elastic.co/packages/7.x/yum
+    gpgcheck: true
+    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    description: Elastic 7.X Repo
+  become: true
+  when: ansible_distribution == "CentOS"
+
+- name: Install Elasticsearch (CentOs)
+  yum:
+    name: elasticsearch
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == "CentOS"
+
+- name: Configure Elasticsearch change cluster name (CentOs)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "cluster.name: demo-elk"
+    state: present
+  when: ansible_distribution == "CentOS"
+
+- name: Configure Elasticsearch give cluster descriptive name (CentOs)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "node.name: elk-1"
+    state: present
+  when: ansible_distribution == "CentOS"
+
+- name: Configure Elasticsearch Add network.host (CentOs)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "network.host: 0.0.0.0"
+    state: present
+  when: ansible_distribution == "CentOS"
+
+- name: Configure Elasticsearch Add http.port (CentOs)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "http.port: 9200"
+    state: present
+  when: ansible_distribution == "CentOS"
+
+- name: Configure Elasticsearch Add discovery.type (CentOs)
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: "discovery.type: single-node"
+    state: present
+  when: ansible_distribution == "CentOS"
+
+- name: Creating an empty file for startup-timeout.conf 1 of 2 (CentOs)
+  file:
+    path: "/etc/systemd/system/elasticsearch.service.d"
+    state: directory
+  when: ansible_distribution == "CentOS"
+
+- name: Creating an empty file for startup-timeout.conf 2 of 2 (CentOs)
+  file:
+    path: "/etc/systemd/system/elasticsearch.service.d/startup-timeout.conf"
+    state: touch
+  when: ansible_distribution == "CentOS"
+
+- name: Prevent systemd service start operation from timing out (CentOs)
+  copy:
+    dest: "/etc/systemd/system/elasticsearch.service.d/startup-timeout.conf"
+    content: |
+      [Service]
+      TimeoutStartSec=3min
+  when: ansible_distribution == "CentOS"
+
+- name: Run daemon-reload for elasticsearch CentOs
+  systemd: daemon_reload=yes
+  when: ansible_distribution == "CentOS"
+
+- name: Enable service Elasticsearch and ensure it is not masked CentOs
+  systemd:
+    name: elasticsearch
+    enabled: yes
+    masked: no
+  when: ansible_distribution == "CentOS"
+
+#- name: ensure elasticsearch is running for CentOs
+#  systemd: state=started name=elasticsearch
+#  when: ansible_distribution == "CentOS"
+
+#- name: Start Elasticsearch for CentOS
+#  shell: systemctl start elasticsearch
+#  when: ansible_distribution == "CentOS"

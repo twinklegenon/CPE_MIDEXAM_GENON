@@ -1,0 +1,172 @@
+
+##install prometheus on ubuntu
+
+- name: install prometheus (Ubuntu)
+  apt:
+    name: prometheus
+  when: ansible_distribution == "Ubuntu"
+
+- name: "Prometheus - Restarting and Enabling (Ubuntu)"
+  service:
+    name: prometheus
+    state: restarted
+    enabled: true
+  when: ansible_distribution == "Ubuntu"
+
+- name: install unzip
+  package:
+    name: unzip
+
+#- name: install prometheus from remote source
+#  unarchive:
+
+#    src: https://github.com/prometheus/prometheus/releases/download/v2.8.1/prometheus-2.8.1.linux-amd64.tar.gz
+#    dest: /usr/local/bin
+#    remote_src: yes
+#    mode: 0755
+#    owner: root
+#    group: root
+#  when: ansible_distribution == "CentOS"
+
+#- name: "Prometheus - Restarting and Enabling (CentOS)"
+#  service:
+#    name: prometheus
+#    state: restarted
+#    enabled: true
+#  when: ansible_distribution == "CentOS"
+
+- name: create node-exporter directory
+  file:
+   path: /Node
+   state: directory
+  when: ansible_distribution == "CentOS"
+
+- name: create prometheus directory
+  file:
+   path: /Prometheus
+   state: directory
+  when: ansible_distribution == "CentOS"
+
+- name: create prometheus storage directory
+  file:
+   path: /var/lib/prometheus
+   state: directory
+  when: ansible_distribution == "CentOS"
+
+- name: install prometheus
+  unarchive: 
+   src: https://github.com/prometheus/prometheus/releases/download/v1.1.3/prometheus-1.1.3.linux-amd64.tar.gz
+   dest: /Prometheus
+   copy: no
+   validate_certs: False
+  when: ansible_distribution == "CentOS"
+
+
+- name: install node-exporter
+  unarchive:
+   src: https://github.com/prometheus/node_exporter/releases/download/0.11.0/node_exporter-0.11.0.linux-amd64.tar.gz
+   dest: /Node
+   copy: no  
+   validate_certs: False
+  when: ansible_distribution == "CentOS"
+
+#- name: create user prometheus
+#  shell: useradd --no-create-home --shell /bin/false prometheus 
+
+#- name: create user node_exporter
+#  shell: useradd --no-create-home --shell /bin/false node_exporter
+
+- name: add node exporter init service
+  copy:
+   src: node_exporter.service
+   dest: /etc/systemd/system/node_exporter.service
+  notify:
+#   - enable node exporter on boot
+#  when: ansible_distribution == "CentOS"
+
+- name: config prometheus
+  copy:
+   src: prometheus.yml
+   dest: ~/Prometheus/prometheus.yml
+  when: ansible_distribution == "CentOS"
+
+#- name: start prometheus service
+#  service: 
+#    name: prometheus.service
+#    state: started
+#    enabled: yes
+
+- name: add prometheus init service
+  copy:
+   src: prometheus.service
+   dest:  ~/etc/systemd/system/prometheus.service
+#  notify:
+#   - enable prometheus service on boot
+  when: ansible_distribution == "CentOS"
+   
+- name: create alertmanager directory
+  file: 
+   path: /Alertmanager
+   state: directory
+  when: ansible_distribution == "CentOS"
+
+- name: install alertmanager
+  unarchive:
+   src: https://github.com/prometheus/alertmanager/releases/download/v0.13.0/alertmanager-0.13.0.linux-amd64.tar.gz
+   dest: /Alertmanager
+   copy: no
+   validate_certs: False
+  when: ansible_distribution == "CentOS"
+
+
+- name: config alertmanager 
+  copy:
+   src: alertmanager_config.yml
+   dest: /Prometheus/alertmanager_config.yml
+  when: ansible_distribution == "CentOS"
+
+- name: add alertmanager init service
+  copy:
+   src: alertmanager.service
+   dest: /etc/systemd/system/alertmanager.service 
+#  notify:
+#   - enable alertmanager service on boot
+  when: ansible_distribution == "CentOS"
+
+- name: enable node exporter
+  systemd:
+    name: node_exporter.service
+    state: started
+    daemon_reload: yes
+    enabled: yes
+  when: ansible_distribution == "CentOS"
+
+- name: enable prometheus service on boot
+  systemd:
+    name: prometheus.service
+    state: started
+    daemon_reload: yes
+    enabled: yes
+  when: ansible_distribution == "CentOS"
+
+- name: enable alertmanager service on boot
+  systemd:
+    name: alertmanager.service
+    state: started
+    daemon_reload: yes
+    enabled: yes
+  when: ansible_distribution == "CentOS"
+
+- name: check if prometheus is acessible
+  uri:
+    url: http://localhost:9090
+    method: GET
+    status_code: 200
+  when: ansible_distribution == "Ubuntu"
+
+- name: Check if node exporter emits metrics
+  uri:
+    url: http://192.168.56.120:9100/metrics
+    method: GET
+    status_code: 200
+  when: ansible_distribution == "Ubuntu"
